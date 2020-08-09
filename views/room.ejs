@@ -127,6 +127,9 @@
 
     input[type="button"] {
       width: 20%;
+      margin-right: 0;
+      padding-left: 0;
+      padding-right: 0;
     }
 
     .color {
@@ -389,6 +392,7 @@
             break;
           
           case 'msg':
+            if('<%=roomId%>' === 'journey-ad.github') msgItem.msg = msgItem.msg.replace(/\u53d8\u6001/g, '\u597d\u4eba')
             message = '' +
               '<div class="message">' +
                 '<span class="nickname" data-uid="'+escapeQuote(extractContent(msgItem.uid))+'" data-name="'+escapeQuote(extractContent(msgItem.name))+'">\
@@ -403,7 +407,7 @@
       }
 
       function updateTitle(info){
-        document.title = info.online + '::' + info.name + '::' + info.uid + '::' + '<%=roomId%> - Chat Room'
+        document.title = info.online + '::' + info.name + '::' + info.uid + '::' + '<%=roomId%>::<%=title%> - Chat Room'
       }
 
       function extractContent(s) {

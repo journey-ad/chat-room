@@ -129,6 +129,10 @@ setInterval(() => {
 app.set('roomList', roomList)
 app.use('/room', roomRouter)
 
+app.get('/', (req, res) => {
+  res.redirect('/room/@demo')
+});
+
 server.listen(3000, () => {
   console.log('server listening on port 3000')
 })

@@ -37,7 +37,7 @@ router.get('/@:roomId/svg', async (req, res) => {
 
   res.set({
     'content-type': 'image/svg+xml',
-    'cache-control': 'max-age=120'
+    'cache-control': 'max-age=0, no-cache, no-store, must-revalidate'
   })
 
   res.send(svg)

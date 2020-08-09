@@ -7,6 +7,7 @@ function record2svg({ roomId, record, width, height, limit, theme, title, fontSi
 
   record.reverse().forEach(msg => {
     const date = moment.unix(msg.time).add(8, 'hours').format('l LT')
+    if(roomId === 'journey-ad.github') msg.msg = msg.msg.replace(/\u53d8\u6001/g, '\u597d\u4eba')
     tpl +=
 `<div class="message">
   <span class="nickname"><span class="name" style="color:${msg.namecolor}">${processUnsafeHtml(msg.name)}</span>::<span class="uid">${processUnsafeHtml(msg.uid)}</span>::<span class="time">${date}</span>:</span><span class="msg" style="color:${msg.msgcolor}">${processUnsafeHtml(msg.msg)}</span>
