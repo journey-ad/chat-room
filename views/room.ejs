@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title><%=roomId%> - Chat Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+  <link rel="icon" type="image/png" href="/favicon.png"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css"/>
+  <style>
+    ::selection {
+      background: #444;
+      color: #fff;
+    }
+    html, body {
+      max-width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0 auto;
+      overscroll-behavior: none;
+    }
+
+    body.self{
+      height: auto;
+    }
+
+    body.self .container {
+      max-width: 800px;
+      margin-top: 5%;
+      height: 500px;
+      background: #fefefe;
+      padding: 20px 30px;
+      border-radius: 22px;
+    }
+
+    #lowpoly {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+    }
+
+    .container {
+      top: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0 auto;
+      padding: 2px;
+      box-sizing: border-box;
+      display: block;
+      position: relative;
+    }
+
+    .status-box {
+      display: inline-block;
+      float: right;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .status-box:hover #userList {
+      display: block;
+    }
+
+    #userList {
+      display: none;
+      position: absolute;
+      left: 0;
+      width: 100%;
+      color: brown;
+      background: #e0e0e0;
+      padding: 10px 14px;
+      font-size: 14px;
+      box-sizing: border-box;
+      word-break: break-all;
+      text-align: left;
+    }
+
+    #userList .nickname {
+      cursor: pointer;
+    }
+
+    #userList .nickname.cur {
+      color: #dc143c;
+    }
+
+    #msgList {
+      border: 1px solid #ccc;
+      width: 100%;
+      height: calc(100% - 60px);
+      overflow-y: auto;
+      font-size: 12px;
+      padding: 0 4px;
+      box-sizing: border-box;
+      overscroll-behavior: none;
+    }
+
+    .send-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .send-box input {
+      display: inline-block;
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    .send-box input.error {
+      border: 1px solid red;
+    }
+
+    input[name="name"] {
+      width: 15%;
+      min-width: 80px;
+    }
+
+    input[name="msg"] {
+      width: 60%;
+    }
+
+    input[type="button"] {
+      width: 20%;
+    }
+
+    .color {
+      display: inline-block;
+      min-width: 20px;
+      width: 5%;
+      margin-right: 6px;
+      overflow: hidden;
+    }
+
+    input[type="color"] {
+      display: block;
+      width: 100%;
+      height: 14px;
+      padding: 0px;
+      margin: 2px 0;
+      border-radius: 0;
+      box-sizing: border-box;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      border-radius: 0;
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border-radius: 0;
+      border: 0;
+    }
+
+    #messageInput {
+      height: 80px;
+    }
+
+    .message {
+      line-height: 1.6;
+      word-break: break-all;
+    }
+
+    .message .nickname {
+      padding-right: 5px;
+      padding-left: 5px;
+      color: brown;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .message .name {
+      color: #117743;
+      font-weight: bold;
+    }
+
+    .message .uid {
+      color: #cc1105;
+      font-weight: bold;
+    }
+
+    .message .time {
+      color: #6f6f6f;
+    }
+
+    .message .msg {
+      font-size: 14px;
+    }
+
+    .sys-msg {
+      color: #c1bfbf;
+      padding-right: 5px;
+      padding-left: 5px;
+      font-size: 14px;
+    }
+
+    #users {
+      width: 490px;
+      padding: 0 5px 5px;
+    }
+
+    @media screen and (max-device-width: 480px) {
+      body {
+          -webkit-text-size-adjust: none;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-box">Status: <span id="status">-</span> / <span id="online"><%=users.length%></span> online.
+          <div id="userList"></div>
+        </div>
+        <div id="msgList"></div>
+        <div class="send-box">
+          <input type="text" name="name" id="name" placeholder="nickname" maxlength="32">
+          <input type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000">
+          <div class="color">
+            <input id="namecolor" type="color" name="namecolor" value="#117743">
+            <input id="msgcolor" type="color" name="msgcolor" value="#3d3d3d">
+          </div>
+          <input type="button" name="send" id="send" value="Send">
+        </div>
+    </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xss@1.0.8/dist/xss.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/trianglify@4.0.0/dist/trianglify.bundle.js"></script>
+  <script>
+    $(function () {
+      var userInfo = null;
+      
+      var userName = '';
+
+      function init() {
+        var socket = io(
+            window.location.hostname,
+            {
+              query: {
+                roomId: <%-JSON.stringify(roomId)%>
+              }
+            }
+          );
+
+        socket.on('connect', function () {
+          $('#status').text('connected.')
+          appendMsg({
+            type: 'sys',
+            msg: 'Welcome to <%= title ? `${title} #${roomId}#` : roomId %>!'
+          })
+        });
+
+        socket.on('online', function (userList) {
+          console.log('online', userList)
+          updateTitle({
+            uid: userInfo.uid,
+            name: userInfo.name,
+            online: userList.length
+          })
+          $('#online').text(userList.length);
+          var list = ''
+          $.each(userList, function(idx, obj){
+            list += '<span class="nickname'+(userInfo.uid === obj.uid ? ' cur' : '')+'" data-uid="'+extractContent(obj.uid)+'" data-name="'+escapeQuote(extractContent(obj.name))+'">'+extractContent(obj.name)+'('+extractContent(obj.uid)+')</span>, '
+          })
+          list = list.slice(0, -2)
+          $('#userList').html(list);
+        });
+
+        socket.on('init', function (user) {
+          if(userInfo) return
+          userInfo = user
+          var date = new Date();
+          date.setTime(date.getTime()+(7*24*60*60*1000));
+          document.cookie = 'uid='+userInfo.uid+'; path=/; expires='+date.toGMTString();
+          $('#name').val(user.name || user.uid);
+          console.log('init', user)
+        });
+
+        socket.on('msg', function (msgItem) {
+          var date = new Date(msgItem.ts * 1000);
+          var dateStr = date.toLocaleDateString("en-US") + ' ' + date.toLocaleTimeString("en-US");
+          appendMsg({
+            type: 'msg',
+            name: msgItem.name,
+            uid: msgItem.uid,
+            time: dateStr,
+            msg: msgItem.msg,
+            namecolor: msgItem.namecolor,
+            msgcolor: msgItem.msgcolor
+          })
+        });
+
+        socket.on('sys', function (sysMsg) {
+          appendMsg({
+            type: 'sys',
+            msg: sysMsg
+          })
+        });
+
+        socket.on('rename', function (info) {
+          if(userInfo.uid === info.uid){
+            userInfo.name = info.name
+            $('#name').val(info.name)
+          }
+        });
+
+        $('#name').blur(function (){
+          var name = $(this).val().trim()
+          if(!name || name === userInfo.name) return
+
+          var date = new Date();
+          date.setTime(date.getTime()+(7*24*60*60*1000));
+          document.cookie = 'name='+name+'; path=/; expires='+date.toGMTString();
+          userInfo.name = name;
+
+          socket.emit('change-name', name);
+        })
+
+        $('#send').click(function () {
+          var name = $('#name').val(),
+              msg = $('#msg').val().trim(),
+              namecolor = $('#namecolor').val(),
+              msgcolor = $('#msgcolor').val();
+
+          if(!name || !msg) return
+
+          $('#msg').val('');
+
+          socket.send({
+            uid: userInfo.uid,
+            name: name,
+            msg: msg,
+            namecolor: namecolor,
+            msgcolor: msgcolor
+          });
+        })
+
+        $('#msg').on('keypress', function(e) {
+          var code = e.keyCode || e.which;
+          if(code === 13){
+            $('#send').click()
+          }
+        });
+
+        $(document).on('click', '#userList .nickname, #msgList .nickname', function(){
+          var uid = $(this).attr('data-uid'),
+              name = $(this).attr('data-name');
+
+          $('#msg').val(function() {
+              return this.value+'@'+name+'('+uid+') '
+          });
+          $('#msg').focus();
+          console.log(uid, name)
+        })
+      }
+
+      $('#status').text('get record...')
+      $.getJSON(location.pathname + '/record', { limit: 100 }, function(data) {
+        $('#status').text('connecting...')
+        data = data.reverse()
+        $.each(data, function(idx, msgItem){
+          var date = new Date(msgItem.time * 1000);
+          var dateStr = date.toLocaleDateString("en-US") + ' ' + date.toLocaleTimeString("en-US");
+            appendMsg({
+              type: 'msg',
+              name: msgItem.name,
+              uid: msgItem.uid,
+              time: dateStr,
+              msg: msgItem.msg,
+              namecolor: msgItem.namecolor,
+              msgcolor: msgItem.msgcolor
+            })
+        })
+        init()
+      });
+
+      function appendMsg(msgItem){
+        var message = ''
+        switch(msgItem.type){
+          case 'sys':
+            message = '<div class="sys-msg"><span class="msg">'+extractContent(msgItem.msg)+'</span></div>'
+            break;
+          
+          case 'msg':
+            message = '' +
+              '<div class="message">' +
+                '<span class="nickname" data-uid="'+escapeQuote(extractContent(msgItem.uid))+'" data-name="'+escapeQuote(extractContent(msgItem.name))+'">\
+                <span class="name" style="color: '+escapeQuote(extractContent(msgItem.namecolor))+'">'+extractContent(msgItem.name)+'</span>::<span class="uid">'+extractContent(msgItem.uid)+'</span>::<span class="time">'+extractContent(msgItem.time)+'</span>:</span>\
+                <span class="msg" style="color: '+escapeQuote(extractContent(msgItem.msgcolor))+'">' + extractContent(msgItem.msg) + '</span>\
+              </div>';
+            break;
+        }
+
+        $('#msgList').append(message);
+        $('#msgList').scrollTop($('#msgList')[0].scrollHeight);
+      }
+
+      function updateTitle(info){
+        document.title = info.online + '::' + info.name + '::' + info.uid + '::' + '<%=roomId%> - Chat Room'
+      }
+
+      function extractContent(s) {
+        return filterXSS(s, {
+          whiteList: []
+        });
+      };
+
+      var REGEXP_QUOTE = /"/g;
+      function escapeQuote(str) {
+        return str.replace(REGEXP_QUOTE, "&quot;");
+      }
+    });
+  </script>
+  <script>
+    var isMobile = navigator.userAgent.match(/(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i)
+    if(!isMobile && !inIframe()){
+      $('body').addClass('self')
+      var pattern = trianglify({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+      var canvas = pattern.toCanvas()
+      canvas.id = 'lowpoly'
+      document.body.appendChild(canvas)
+    }
+
+    function inIframe() {
+      try {
+          return window.self !== window.top;
+      } catch (e) {
+          return true;
+      }
+    }
+  </script> 
+</body>
+</html>
