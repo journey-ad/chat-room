@@ -6,6 +6,7 @@ const path = require('path')
 const IO = require('socket.io')
 const xss = require('xss')
 const db = require('./utils/db')
+const filter = require('./utils/filter')
 
 const app = express()
 
@@ -29,9 +30,9 @@ socketIO.on('connection', socket => {
 
   const { cookie } = socket.handshake.headers
   // Get nickname from the cookie or generate a random name
-  const name = getCookie(cookie, 'name').trim().substring(0, 32) || `user_${Math.random().toString(36).substr(2, 5)}`
+  const name = processInput(getCookie(cookie, 'name').trim().substring(0, 32) || `user_${Math.random().toString(36).substr(2, 5)}`)
   // Get uid from the cookies or set the uid to be the same as the session ID on the first connection
-  const uid = getCookie(cookie, 'uid').trim().substring(0, 7) || sid
+  const uid = processInput(getCookie(cookie, 'uid').trim().substring(0, 7) || sid)
 
   socket.join(roomId)
 
@@ -54,7 +55,7 @@ socketIO.on('connection', socket => {
   socketIO.to(roomId).emit('online', roomList[roomId])
 
   socket.on('change-name', name => {
-    name = name.trim().substring(0, 32)
+    name = processInput(name.trim()).substring(0, 32)
 
     const index = roomList[roomId].findIndex(obj => obj.uid === user.uid)
     const oldName = roomList[roomId][index]['name'].substring(0, 32)
@@ -63,11 +64,11 @@ socketIO.on('connection', socket => {
 
     roomList[roomId][index]['name'] = name
 
-    socketIO.to(roomId).emit('rename', { uid: user.uid, name })
+    socketIO.to(roomId).emit('rename', { uid: processInput(user.uid), name })
     socketIO.to(roomId).emit('online', roomList[roomId])
 
     const msg = `${oldName}(${user.uid}) changed the name from ${oldName} to ${name}.`
-    socketIO.to(roomId).emit('sys', msg)
+    socketIO.to(roomId).emit('sys', processInput(msg))
     console.log(msg)
   })
 
@@ -89,7 +90,7 @@ socketIO.on('connection', socket => {
       if(user.session.length === 0) {
         roomList[roomId].splice(userIndex, 1)
 
-        socketIO.to(roomId).emit('sys', `${user.name}(${user.uid}) leave the chat.`)
+        socketIO.to(roomId).emit('sys', `${processInput(user.name)}(${processInput(user.uid)}) leave the chat.`)
         socketIO.to(roomId).emit('online', roomList[roomId])
       }
 
@@ -107,8 +108,8 @@ socketIO.on('connection', socket => {
       sid,
       room: roomId,
       ts: Date.now() / 1000 | 0,
-      name: xss(msg.name).substring(0, 32),
-      msg: xss(msg.msg).substring(0, 1000)
+      name: processInput(msg.name, true).substring(0, 32),
+      msg: processInput(msg.msg, true).substring(0, 1000)
     }
 
     socketIO.to(roomId).emit('msg', msgItem)
@@ -132,6 +133,10 @@ app.use('/room', roomRouter)
 app.get('/', (req, res) => {
   res.redirect('/room/@demo')
 });
+app.get('/filter', (req, res) => {
+  const { q } = req.query
+  res.send(processInput(q))
+});
 
 server.listen(3000, () => {
   console.log('server listening on port 3000')
@@ -142,4 +147,10 @@ function getCookie(cookie, name) {
   const parts = cookie.split(`; ${name}=`)
   if (parts.length === 2) return parts.pop().split(';').shift()
   return ''
+}
+
+function processInput(source, flag){
+  if(flag) source = xss(source)
+
+  return filter(source)
 }

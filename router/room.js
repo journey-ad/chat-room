@@ -6,7 +6,6 @@ const express = require('express')
 const router = express.Router()
 
 router.get('/@:roomId', (req, res) => {
-  console.log(req.app)
   const roomList = req.app.get('roomList')
   const { roomId } = req.params
   const { title } = req.query
