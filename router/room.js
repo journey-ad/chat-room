@@ -1,6 +1,6 @@
 'use strict'
 
-const db = require('../utils/db')
+const db = require('../db')
 const record2svg = require('../utils/record2svg')
 const express = require('express')
 const router = express.Router()

@@ -244,7 +244,7 @@
 
       function init() {
         var socket = io(
-            window.location.hostname,
+            window.location.host,
             {
               query: {
                 roomId: <%-JSON.stringify(roomId)%>

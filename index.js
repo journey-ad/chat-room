@@ -1,11 +1,12 @@
 'use strict'
 
+const config = require('config-yml')
 const express = require('express')
 const compression = require('compression')
 const path = require('path')
 const IO = require('socket.io')
 const xss = require('xss')
-const db = require('./utils/db')
+const db = require('./db')
 const filter = require('./utils/filter')
 
 const app = express()
@@ -138,8 +139,8 @@ app.get('/filter', (req, res) => {
   res.send(processInput(q))
 });
 
-server.listen(3000, () => {
-  console.log('server listening on port 3000')
+server.listen(config.app.port, () => {
+  console.log(`server listening on port ${config.app.port}`)
 })
 
 function getCookie(cookie, name) {
