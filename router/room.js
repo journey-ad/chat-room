@@ -28,11 +28,14 @@ router.get('/@:roomId/record', async (req, res) => {
 
 router.get('/@:roomId/svg', async (req, res) => {
   const { roomId } = req.params
-  const { width=500, height=300, limit=20, theme='', title=`${roomId}@chat.getloli.com: ~`, fontSize='12' } = req.query
+  let { width=500, height=300, limit=20, theme='', title=`${roomId}
+  @chat.getloli.com: ~`, fontSize='12' } = req.query
+
+  limit = Math.floor(Math.abs(Math.min(limit, 100) || 20))
 
   const record = await db.getRecord(roomId, limit)
 
-  const svg = record2svg({ roomId, record, width, height, limit, theme, title, fontSize })
+  const svg = record2svg({ roomId, record, width: Math.abs(width), height: Math.abs(height), limit, theme, title, fontSize: Math.abs(fontSize) })
 
   res.set({
     'content-type': 'image/svg+xml',

@@ -10,7 +10,7 @@ function record2svg({ roomId, record, width, height, limit, theme, title, fontSi
     if(roomId === 'journey-ad.github') msg.msg = msg.msg.replace(/\u53d8\u6001/g, '\u597d\u4eba')
     tpl +=
 `<div class="message">
-  <span class="nickname"><span class="name" style="color:${msg.namecolor}">${processUnsafeHtml(msg.name)}</span>::<span class="uid">${processUnsafeHtml(msg.uid)}</span>::<span class="time">${date}</span>:</span><span class="msg" style="color:${msg.msgcolor}">${processUnsafeHtml(msg.msg)}</span>
+  <span class="nickname"><span class="name" style="color:${processUnsafeHtml(msg.namecolor)}">${processUnsafeHtml(msg.name)}</span>::<span class="uid">${processUnsafeHtml(msg.uid)}</span>::<span class="time">${date}</span>:</span><span class="msg" style="color:${processUnsafeHtml(msg.msgcolor)}">${processUnsafeHtml(msg.msg)}</span>
 </div>`
   })
 
@@ -83,7 +83,7 @@ function record2svg({ roomId, record, width, height, limit, theme, title, fontSi
         }
         .container.light .content::before {
           color: #21252b;
-          content: '${title.replace(/"/g, '&quot;')}';
+          content: '${processUnsafeHtml(title.replace(/"/g, '&quot;'))}';
           height: 26px;
           line-height: 26px;
           font-size: 12px;
@@ -134,7 +134,8 @@ function record2svg({ roomId, record, width, height, limit, theme, title, fontSi
 }
 
 function processUnsafeHtml(source) {
-  return `<![CDATA[${source}]]>`
+  source = source.replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+  return source.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 }
 
 module.exports = record2svg
