@@ -53,6 +53,31 @@
       position: relative;
     }
 
+    .toast {
+      display: none;
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      animation: toast .3s ease-in-out;
+    }
+
+    @keyframes toast{
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(-50%);
+      }
+    }
+
     .status-box {
       display: inline-block;
       float: right;
@@ -93,6 +118,7 @@
       overflow-y: auto;
       font-size: 12px;
       padding: 0 4px;
+      padding-bottom: 2px;
       box-sizing: border-box;
       overscroll-behavior: none;
     }
@@ -121,8 +147,25 @@
       min-width: 80px;
     }
 
-    input[name="msg"] {
+    .input-wrap{
+      position: relative;
       width: 60%;
+      height: 40px;
+      margin: 0;
+      margin-right: 6px;
+    }
+
+    input[name="msg"],
+    textarea[name="msg"] {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      max-height: 120px;
+      font-size: 14px;
+      resize: none;
+      margin: 0;
     }
 
     input[type="button"] {
@@ -165,13 +208,19 @@
     }
 
     .message {
+      padding: 0 5px;
       line-height: 1.6;
       word-break: break-all;
     }
 
+    .message.highlight {
+      display: inline-block;
+      border: 1px solid #ff4747;
+      margin: 1px 0;
+    }
+
     .message .nickname {
       padding-right: 5px;
-      padding-left: 5px;
       color: brown;
       font-family: Consolas, Monaco, monospace;
       font-size: 12px;
@@ -217,22 +266,27 @@
 </head>
 <body>
     <div class="container">
-        <div class="status-box">Status: <span id="status">-</span> / <span id="online"><%=users.length%></span> online.
-          <div id="userList"></div>
+      <div class="status-box">Status: <span id="status">-</span> / <span id="online"><%=users.length%></span> online.
+        <div id="userList"></div>
+      </div>
+      <div id="msgList"></div>
+      <div class="send-box">
+        <input type="text" name="name" id="name" placeholder="nickname" maxlength="32">
+        <div class="input-wrap">
+          <!--<input type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000">-->
+          <textarea type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000"></textarea>
         </div>
-        <div id="msgList"></div>
-        <div class="send-box">
-          <input type="text" name="name" id="name" placeholder="nickname" maxlength="32">
-          <input type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000">
-          <div class="color">
-            <input id="namecolor" type="color" name="namecolor" value="#117743">
-            <input id="msgcolor" type="color" name="msgcolor" value="#3d3d3d">
-          </div>
-          <input type="button" name="send" id="send" value="Send">
+        <div class="color">
+          <input id="namecolor" type="color" name="namecolor" value="#117743">
+          <input id="msgcolor" type="color" name="msgcolor" value="#3d3d3d">
         </div>
+        <input type="button" name="send" id="send" value="Send">
+      </div>
+      <span class="toast"></span>
     </div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notify.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xss@1.0.8/dist/xss.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/linkifyjs@2.1.9/dist/linkify.min.js"></script>
@@ -241,15 +295,22 @@
   <script>
     $(function () {
       var userInfo = null;
+      var roomInfo = {
+        roomId: '<%=roomId%>',
+        title: '<%=title%>'
+      }
       
       var userName = '';
+
+      var REGEXP_MENTION = ''
+      var notify = new Notify()
 
       function init() {
         var socket = io(
             window.location.host,
             {
               query: {
-                roomId: <%-JSON.stringify(roomId)%>
+                roomId: roomInfo.roomId
               }
             }
           );
@@ -260,6 +321,8 @@
             type: 'sys',
             msg: 'Welcome to <%= title ? `${title} #${roomId}#` : roomId %>!'
           })
+
+          notify.init()
         });
 
         socket.on('online', function (userList) {
@@ -281,6 +344,7 @@
         socket.on('init', function (user) {
           if(userInfo) return
           userInfo = user
+          REGEXP_MENTION = new RegExp('@.*\((' + escapeRegex(userInfo.uid) + ')\)')
           var date = new Date();
           date.setTime(date.getTime()+(7*24*60*60*1000));
           document.cookie = 'uid='+userInfo.uid+'; path=/; expires='+date.toGMTString();
@@ -291,6 +355,21 @@
         socket.on('msg', function (msgItem) {
           var date = new Date(msgItem.ts * 1000);
           var dateStr = date.toLocaleDateString("en-US") + ' ' + date.toLocaleTimeString("en-US");
+          var highlight = false;
+
+          if(msgItem.uid !== userInfo.uid){
+            var mentionMe = msgItem.msg.match(REGEXP_MENTION)
+            if(mentionMe){
+              highlight = true;
+              notify.push({
+                roomId: roomInfo.roomId,
+                from: msgItem.name,
+                to: userInfo.name,
+                msg: msgItem.msg
+              })
+            }
+          }
+
           appendMsg({
             type: 'msg',
             name: msgItem.name,
@@ -298,7 +377,8 @@
             time: dateStr,
             msg: msgItem.msg,
             namecolor: msgItem.namecolor,
-            msgcolor: msgItem.msgcolor
+            msgcolor: msgItem.msgcolor,
+            highlight: highlight
           })
         });
 
@@ -336,7 +416,7 @@
 
           if(!name || !msg) return
 
-          $('#msg').val('');
+          $('#msg').val('').attr('style', '');
 
           socket.send({
             uid: userInfo.uid,
@@ -349,9 +429,27 @@
 
         $('#msg').on('keypress', function(e) {
           var code = e.keyCode || e.which;
-          if(code === 13){
+          if(code === 13) {
+            e.preventDefault();
             $('#send').click()
           }
+        });
+
+        $("#msg").on('change keyup paste', function(e) {
+          if(!$(this).val()){
+            $(this).attr('style', '');
+            return
+          }
+          var element = e.target;
+
+          $(this).css('overflow', 'hidden');
+          $(this).height(0);
+          
+          var height = element.scrollHeight===38 ? element.scrollHeight - 18 : element.scrollHeight;
+
+          if(height >= 120) $(this).css('overflow', '');
+
+          $(this).height(height);
         });
 
         $(document).on('click', '#userList .nickname, #msgList .nickname', function(){
@@ -373,16 +471,19 @@
         $.each(data, function(idx, msgItem){
           var date = new Date(msgItem.time * 1000);
           var dateStr = date.toLocaleDateString("en-US") + ' ' + date.toLocaleTimeString("en-US");
-            appendMsg({
-              type: 'msg',
-              name: msgItem.name,
-              uid: msgItem.uid,
-              time: dateStr,
-              msg: msgItem.msg,
-              namecolor: msgItem.namecolor,
-              msgcolor: msgItem.msgcolor
-            })
+
+          appendMsg({
+            type: 'msg',
+            name: msgItem.name,
+            uid: msgItem.uid,
+            time: dateStr,
+            msg: msgItem.msg,
+            namecolor: msgItem.namecolor,
+            msgcolor: msgItem.msgcolor
+          })
+
         })
+
         init()
       });
 
@@ -396,7 +497,7 @@
           case 'msg':
             if('<%=roomId%>' === 'journey-ad.github') msgItem.msg = msgItem.msg.replace(/\u53d8\u6001/g, '\u597d\u4eba')
             message = '' +
-              '<div class="message">' +
+              '<div class="message'+ (msgItem.highlight ? ' highlight' : '') + '">' +
                 '<span class="nickname" data-uid="'+escapeQuote(extractContent(msgItem.uid))+'" data-name="'+escapeQuote(extractContent(msgItem.name))+'">\
                 <span class="name" style="color: '+escapeQuote(extractContent(msgItem.namecolor))+'">'+extractContent(msgItem.name)+'</span>::<span class="uid">'+extractContent(msgItem.uid)+'</span>::<span class="time">'+extractContent(msgItem.time)+'</span>:</span>\
                 <span class="msg" style="color: '+escapeQuote(extractContent(msgItem.msgcolor))+'">' + extractContent(msgItem.msg) + '</span>\
@@ -428,6 +529,10 @@
       var REGEXP_QUOTE = /"/g;
       function escapeQuote(str) {
         return str.replace(REGEXP_QUOTE, "&quot;");
+      }
+
+      function escapeRegex(string) {
+        return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       }
     });
   </script>
