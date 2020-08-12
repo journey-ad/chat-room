@@ -70,13 +70,15 @@ And you can open in new tab or use iframe, [example](https://count.getloli.com/)
 
 By the feature of SVG `<foreignObject>`, we can make an SVG element contain a standard HTML page
 
-and we know SVG can be referenced as an image
+And we know SVG can be referenced as an image
 
-and then...
+And then...
 
 [![SVG Charts](https://chat.getloli.com/room/@test/svg?width=750&height=360&limit=20&theme=light&fontSize=13&title=jad@github.com:%20%7E)](https://chat.getloli.com/room/@test)
 
-**Magical!** a **Real-time** chart that can be inserted into any document that supports images. just like this guy's [personal home page](https://github.com/journey-ad)
+**Magical!** a **Real-time** chart that can be inserted into any document that supports images.
+
+Just like this guy's [personal home page](https://github.com/journey-ad)
 
 This is all parameters, do it yourself:
 ```
