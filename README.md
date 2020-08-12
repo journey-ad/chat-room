@@ -68,9 +68,9 @@ And you can open in new tab or use iframe, [example](https://count.getloli.com/)
 
 #### SVG Charts
 
-By the feature of SVG `<foreignObject>`, we can make an SVG element contain a standard HTML page
+By the feature of SVG `<foreignObject>`, we can make an SVG element contain a standard HTML page.
 
-And we know SVG can be referenced as an image
+As we know SVG can be referenced as an image.
 
 And then...
 
