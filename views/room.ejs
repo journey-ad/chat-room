@@ -39,6 +39,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      object-fit: cover;
       z-index: -1;
     }
 
@@ -445,7 +446,7 @@
           $(this).css('overflow', 'hidden');
           $(this).height(0);
           
-          var height = element.scrollHeight===38 ? element.scrollHeight - 18 : element.scrollHeight;
+          var height = element.scrollHeight<=40 ? element.scrollHeight - 19 : element.scrollHeight;
 
           if(height >= 120) $(this).css('overflow', '');
 
@@ -488,7 +489,7 @@
       });
 
       function appendMsg(msgItem){
-        var message = ''
+        var message = '', scrollFlag = false;
         switch(msgItem.type){
           case 'sys':
             message = '<div class="sys-msg"><span class="msg">'+extractContent(msgItem.msg)+'</span></div>'
@@ -505,6 +506,8 @@
             break;
         }
 
+        if($('#msgList').scrollTop() + $('#msgList').height() >= $('#msgList')[0].scrollHeight - 2) scrollFlag = true;
+
         $('#msgList').append(message);
         $('#msgList .message .msg:last').linkify({
           className: 'link',
@@ -513,7 +516,7 @@
           },
           target: '_blank'
         });
-        $('#msgList').scrollTop($('#msgList')[0].scrollHeight);
+        if(scrollFlag) $('#msgList').scrollTop($('#msgList')[0].scrollHeight);
       }
 
       function updateTitle(info){
