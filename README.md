@@ -5,6 +5,7 @@
 一个普通的聊天室
 
 ![Snipaste_2020-08-12_18-42-17.png](https://i.loli.net/2020/08/12/mxQph9ToEzufgPt.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjourney-ad%2Fchat-room.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjourney-ad%2Fchat-room?ref=badge_shield)
 
 [Demo](https://chat.getloli.com/room/@demo)
 
@@ -95,3 +96,6 @@ https://chat.getloli.com/room/@test/svg?width=750&height=360&limit=20&theme=ligh
 ## License
 
 MIT
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjourney-ad%2Fchat-room.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjourney-ad%2Fchat-room?ref=badge_large)
