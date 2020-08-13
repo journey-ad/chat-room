@@ -30,14 +30,14 @@ $ yarn start
 
 ### Confignation
 
-`config.yml`
+[`config.yml`](config.yml)
 
 ```yaml
 app:
   port: 3000
 
 db:
-  type: mongodb # sqlite or mongodb
+  type: mongodb # sqlite or mongodb or firebase
 ```
 
 If you use mongodb, you need to specify the environment variable `DB_URL`
