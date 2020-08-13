@@ -146,7 +146,13 @@ server.listen(config.app.port, () => {
 function getCookie(cookie, name) {
   cookie = `; ${cookie}`
   const parts = cookie.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
+  if (parts.length === 2) {
+    try {
+      return decodeURIComponent(parts.pop().split(';').shift())
+    } catch {
+      return 'wrong_name'
+    }
+  }
   return ''
 }
 
