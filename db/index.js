@@ -8,6 +8,9 @@ switch(config.db.type){
   case 'mongodb':
     db = require('./mongodb')
     break;
+  case 'firebase':
+    db = require('./firebase')
+    break;
   case 'sqlite':
   default:
     db = require('./sqlite')
