@@ -2,4 +2,15 @@ app:
   port: 3000
 
 db:
-  type: mongodb # sqlite or mongodb
+  type: mongodb # sqlite or mongodb or firebase
+
+# if use firebase, please add your api here
+firebase:
+  apiKey: # your firebase api data
+  authDomain: # your firebase api data
+  databaseURL: # your firebase api data
+  projectId: # your firebase api data
+  storageBucket: # your firebase api data
+  messagingSenderId: # your firebase api data
+  appId: # your firebase api data
+  measurementId: # your firebase api data
