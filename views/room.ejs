@@ -464,7 +464,9 @@
           console.log(uid, name)
         })
       }
-
+      $('#msg').click(() => {
+        $('#msgList').scrollTop($('#msgList')[0].scrollHeight)
+      });
       $('#status').text('get record...')
       $.getJSON(location.pathname + '/record', { limit: 100 }, function(data) {
         $('#status').text('connecting...')
