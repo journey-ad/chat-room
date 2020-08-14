@@ -5,6 +5,7 @@
   <title><%=roomId%> - Chat Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
   <link rel="icon" type="image/png" href="/favicon.png"/>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css"/>
   <style>
     ::selection {
@@ -17,6 +18,11 @@
       padding: 0;
       margin: 0 auto;
       overscroll-behavior: none;
+    }
+
+    p {
+    white-space: pre-line;
+    margin: 2px;
     }
 
     body.self{
@@ -275,7 +281,7 @@
         <input type="text" name="name" id="name" placeholder="nickname" maxlength="32">
         <div class="input-wrap">
           <!--<input type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000">-->
-          <textarea type="text" name="msg" id="msg" placeholder="some text..." maxlength="1000"></textarea>
+          <textarea type="text" name="msg" id="msg" placeholder="Markdowm is supported, give it a try!" maxlength="1000"></textarea>
         </div>
         <div class="color">
           <input id="namecolor" type="color" name="namecolor" value="#117743">
@@ -322,7 +328,7 @@
             type: 'sys',
             msg: 'Welcome to <%= title ? `${title} #${roomId}#` : roomId %>!'
           })
-
+          $('#msgList').scrollTop($('#msgList')[0].scrollHeight)
           notify.init()
         });
 
@@ -428,14 +434,6 @@
           });
         })
 
-        $('#msg').on('keypress', function(e) {
-          var code = e.keyCode || e.which;
-          if(code === 13) {
-            e.preventDefault();
-            $('#send').click()
-          }
-        });
-
         $("#msg").on('change keyup paste', function(e) {
           if(!$(this).val()){
             $(this).attr('style', '');
@@ -464,7 +462,7 @@
           console.log(uid, name)
         })
       }
-      $('#msg').on('click', function(){
+      $('.send-box').on('click', function(){
         $('#msgList').animate({ scrollTop: $('#msgList')[0].scrollHeight }, 300)
       });
       $('#status').text('get record...')
@@ -503,7 +501,7 @@
               '<div class="message'+ (msgItem.highlight ? ' highlight' : '') + '">' +
                 '<span class="nickname" data-uid="'+escapeQuote(extractContent(msgItem.uid))+'" data-name="'+escapeQuote(extractContent(msgItem.name))+'">\
                 <span class="name" style="color: '+escapeQuote(extractContent(msgItem.namecolor))+'">'+extractContent(msgItem.name)+'</span>::<span class="uid">'+extractContent(msgItem.uid)+'</span>::<span class="time">'+extractContent(msgItem.time)+'</span>:</span>\
-                <span class="msg" style="color: '+escapeQuote(extractContent(msgItem.msgcolor))+'">' + extractContent(msgItem.msg) + '</span>\
+                <div class="msg" style="color: '+escapeQuote(extractContent(msgItem.msgcolor))+'">' + marked(extractContent(msgItem.msg)) + '</div>\
               </div>';
             break;
         }
