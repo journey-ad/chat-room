@@ -15,7 +15,7 @@ var docRef = db.collection("chatroom");
 
 async function getRecord(roomId, limit = 100) {
     let result = [];
-    await docRef.where("room", "==", roomId).limit(+limit).get().then(function (querySnapshot) {
+    await docRef.where("room", "==", roomId).orderBy("time","desc").limit(+limit).get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
             // doc.data() is never undefined for query doc snapshots
             // console.log(doc.id, " => ", doc.data());
@@ -29,6 +29,7 @@ async function getRecord(roomId, limit = 100) {
 
 function setRecord(msgItem) {
     msgItem.time = msgItem.ts;
+    delete msgItem.ts;
     docRef.add(msgItem)
 }
 
