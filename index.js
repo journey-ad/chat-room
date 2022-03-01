@@ -24,6 +24,8 @@ const socketIO = IO(server)
 
 const roomList = {}
 
+const REGEX_HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}){1,2}$/
+
 // When new connection incoming
 socketIO.on('connection', socket => {
   // Get Room ID / Session ID
@@ -110,7 +112,9 @@ socketIO.on('connection', socket => {
       room: roomId,
       ts: Date.now() / 1000 | 0,
       name: processInput(msg.name, true).substring(0, 32),
-      msg: processInput(msg.msg, true).substring(0, 1000)
+      msg: processInput(msg.msg, true).substring(0, 1000),
+      namecolor: REGEX_HEX_COLOR.test(msg.namecolor) ? msg.namecolor : '#117743',
+      msgcolor: REGEX_HEX_COLOR.test(msg.msgcolor) ? msg.msgcolor : '#3d3d3d'
     }
 
     socketIO.to(roomId).emit('msg', msgItem)
@@ -134,9 +138,19 @@ app.use('/room', roomRouter)
 app.get('/', (req, res) => {
   res.redirect('/room/@demo')
 });
+
 app.get('/filter', (req, res) => {
   const { q } = req.query
   res.send(processInput(q))
+});
+
+app.get('/heart-beat', (req, res) => {
+  res.set({
+    'cache-control': 'max-age=0, no-cache, no-store, must-revalidate'
+  })
+
+  res.send('alive')
+  console.log('heart-beat')
 });
 
 server.listen(config.app.port, () => {
