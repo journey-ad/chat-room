@@ -19,9 +19,9 @@ router.get('/@:roomId', (req, res) => {
 
 router.get('/@:roomId/record', async (req, res) => {
   const { roomId } = req.params
-  const { limit=100 } = req.query
+  const { limit=100, offset=0 } = req.query
 
-  const record = await db.getRecord(roomId, limit)
+  const record = await db.getRecord(roomId, limit, offset)
 
   res.json(record)
 })

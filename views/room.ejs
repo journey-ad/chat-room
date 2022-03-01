@@ -32,6 +32,14 @@
       border-radius: 22px;
     }
 
+    body .nickname .meta {
+      display: none;
+    }
+
+    body.self .nickname .meta {
+      display: inline;
+    }
+
     #lowpoly {
       position: fixed;
       width: 100%;
@@ -102,6 +110,7 @@
       box-sizing: border-box;
       word-break: break-all;
       text-align: left;
+      z-index: 99;
     }
 
     #userList .nickname {
@@ -209,9 +218,11 @@
     }
 
     .message {
+      position: relative;
       padding: 0 5px;
       line-height: 1.6;
       word-break: break-all;
+      overflow-wrap: break-word;
     }
 
     .message.highlight {
@@ -220,11 +231,31 @@
       margin: 1px 0;
     }
 
+    .message .action {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      font-size: 13px;
+      padding: 2px 6px;
+      background: #fee;
+      border: 1px solid #962c07;
+    }
+
+    .message .action a {
+      color: #270400;
+      text-decoration: none;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+    .message .action a:last-of-type {
+      margin-right: 0;
+    }
+
     .message .nickname {
       padding-right: 5px;
       color: brown;
       font-family: Consolas, Monaco, monospace;
-      font-size: 12px;
+      font-size: 10px;
       cursor: pointer;
     }
 
@@ -305,6 +336,8 @@
 
       var REGEXP_MENTION = ''
       var notify = new Notify()
+
+      var blockList = []
 
       function init() {
         var socket = io(
@@ -454,16 +487,69 @@
         });
 
         $(document).on('click', '#userList .nickname, #msgList .nickname', function(){
-          var uid = $(this).attr('data-uid'),
+          var $msgEl = $(this).parent('.message'),
+              $el = $(this).get(0),
+              _pos = $el.getBoundingClientRect(),
+              uid = $(this).attr('data-uid'),
               name = $(this).attr('data-name');
 
-          $('#msg').val(function() {
-              return this.value+'@'+name+'('+uid+') '
-          });
-          $('#msg').focus();
-          console.log(uid, name)
+          if($msgEl.length === 0) {
+            $('#msg').val($('#msg').val() + '@' + name + '(' + uid + ') ');
+            $('#msg').trigger('change');
+            $('#msg').focus();
+          }
+
+          var pos = {
+            x: _pos.x,
+            y: _pos.y - 30,
+          }
+
+          var $action = $('<div class="action">\
+              <a herf="javascript:;" data-action="at" data-uid="'+uid+'">@'+name+'</a>\
+              <a herf="javascript:;" data-action="block" data-uid="'+uid+'">Block '+name+'</a>\
+            </div>');
+
+          $action.on('click', 'a', function(){
+            var action = $(this).attr('data-action'),
+                uid = $(this).attr('data-uid');
+
+            console.log(action, uid, name)
+
+            if(action === 'at'){
+              $('#msg').val($('#msg').val() + '@' + name + '(' + uid + ') ');
+              $('#msg').trigger('change');
+              $('#msg').focus();
+            }else if(action === 'block'){
+              confirm('Are you sure to block '+name+'?') && blockUser(uid)
+            }
+            $action.fadeOut(120, function(){
+              $action.remove();
+            })
+          })
+          $(document).one('click', function(){
+            $action.fadeOut(120, function(){
+              $action.remove();
+            })
+          })
+
+          $msgEl.prepend($action)
+          $action.hide().fadeIn(120);
+          return
         })
       }
+
+      try {
+        blockList = JSON.parse(localStorage.getItem('blockList')) || []
+      } catch (error) {
+        blockList = []
+      }
+
+      function blockUser(uid){
+        blockList.push(uid)
+        localStorage.setItem('blockList', JSON.stringify(blockList))
+        $('#msgList').find('.message[data-uid="'+uid+'"]').remove()
+      }
+
       $('#msg').on('click', function(){
         $('#msgList').animate({ scrollTop: $('#msgList')[0].scrollHeight }, 300)
       });
@@ -490,8 +576,66 @@
         init()
       });
 
-      function appendMsg(msgItem){
+      var offset = 100, limit = 100, loading = false, finished = false;
+      $('#msgList').on('scroll', function(){
+        if(loading || finished) return;
+        if($(this).scrollTop() < 300){
+          loading = true;
+          var scrollHeight = $('#msgList')[0].scrollHeight;
+          getRecord(offset, limit, function(){
+            $('#msgList').scrollTop($('#msgList')[0].scrollHeight - scrollHeight);
+            offset += limit;
+            loading = false;
+          })
+        }
+      })
+
+      function getRecord(offset, limit, callback) {
+        $.getJSON(location.pathname + '/record', { offset: offset, limit: limit }, function(data) {
+          if(data.length === 0){
+            finished = true;
+            appendMsg({
+              type: 'sys',
+              msg: 'No more record.'
+            }, 'before')
+            return
+          }
+          $.each(data, function(idx, msgItem){
+            var date = new Date(msgItem.time * 1000);
+            var dateStr = date.toLocaleDateString("en-US") + ' ' + date.toLocaleTimeString("en-US");
+
+            appendMsg({
+              type: 'msg',
+              name: msgItem.name,
+              uid: msgItem.uid,
+              time: dateStr,
+              msg: msgItem.msg,
+              namecolor: msgItem.namecolor,
+              msgcolor: msgItem.msgcolor
+            }, 'before')
+
+          })
+
+          callback && callback()
+        });
+      }
+
+      function appendMsg(msgItem, position){
+        if(blockList.indexOf(msgItem.uid) !== -1) return;
+
         var message = '', scrollFlag = false;
+        position = position || 'after';
+
+        var parsedMsg = {
+          type: msgItem.type,
+          name: extractContent(msgItem.name),
+          uid: extractContent(msgItem.uid),
+          time: extractContent(msgItem.time),
+          msg: extractContent(msgItem.msg),
+          namecolor: extractContent(msgItem.namecolor),
+          msgcolor: extractContent(msgItem.msgcolor)
+        }
+
         switch(msgItem.type){
           case 'sys':
             message = '<div class="sys-msg"><span class="msg">'+extractContent(msgItem.msg)+'</span></div>'
@@ -499,26 +643,32 @@
           
           case 'msg':
             if('<%=roomId%>' === 'journey-ad.github') msgItem.msg = msgItem.msg.replace(/\u53d8\u6001/g, '\u597d\u4eba')
-            message = '' +
-              '<div class="message'+ (msgItem.highlight ? ' highlight' : '') + '">' +
-                '<span class="nickname" data-uid="'+escapeQuote(extractContent(msgItem.uid))+'" data-name="'+escapeQuote(extractContent(msgItem.name))+'">\
-                <span class="name" style="color: '+escapeQuote(extractContent(msgItem.namecolor))+'">'+extractContent(msgItem.name)+'</span>::<span class="uid">'+extractContent(msgItem.uid)+'</span>::<span class="time">'+extractContent(msgItem.time)+'</span>:</span>\
-                <span class="msg" style="color: '+escapeQuote(extractContent(msgItem.msgcolor))+'">' + extractContent(msgItem.msg) + '</span>\
+            message = '\
+              <div class="message'+ (msgItem.highlight ? ' highlight' : '') + '" data-uid="'+escapeQuote(parsedMsg.uid)+'">\
+                <span class="nickname" data-uid="'+escapeQuote(parsedMsg.uid)+'" data-name="'+escapeQuote(parsedMsg.name)+'">\
+                <span class="name" style="color: '+escapeQuote(parsedMsg.namecolor)+'">'+parsedMsg.name+'</span><span class="meta">::<span class="uid">'+parsedMsg.uid+'</span>::<span class="time">'+parsedMsg.time+'</span></span>:</span>\
+                <span class="msg" style="color: '+escapeQuote(parsedMsg.msgcolor)+'">' + parsedMsg.msg + '</span>\
               </div>';
             break;
         }
 
         if($('#msgList').scrollTop() + $('#msgList').height() >= $('#msgList')[0].scrollHeight - 2) scrollFlag = true;
 
-        $('#msgList').append(message);
-        $('#msgList .message .msg:last').linkify({
+        var linkifyOpts = {
           className: 'link',
           attributes: {
             rel: 'nofollow'
           },
           target: '_blank'
-        });
-        if(scrollFlag) $('#msgList').scrollTop($('#msgList')[0].scrollHeight);
+        }
+        if(position === 'before'){
+          $('#msgList').prepend(message);
+          $('#msgList .message .msg:first').linkify(linkifyOpts);
+        }else{
+          $('#msgList').append(message);
+          $('#msgList .message .msg:last').linkify(linkifyOpts);
+          if(scrollFlag) $('#msgList').scrollTop($('#msgList')[0].scrollHeight);
+        }
       }
 
       function updateTitle(info){

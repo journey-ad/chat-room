@@ -7,11 +7,12 @@ mongoose.connect(process.env.DB_URL)
 
 const Message = mongoose.connection.model('Message', schema)
 
-function getRecord(roomId, limit=100) {
+function getRecord(roomId, limit=100, offset=0) {
   return Message
           .find({ room: roomId }, '-_id -__v')
           .sort({time: 'desc'})
           .limit(+limit)
+          .skip(+offset)
           .exec()
 }
 
