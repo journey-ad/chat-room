@@ -19,9 +19,9 @@ db.run(`CREATE TABLE IF NOT EXISTS tb_msg (
     msg       VARCHAR (1000) NOT NULL
 );`)
 
-function getRecord(roomId, limit=100) {
+function getRecord(roomId, limit=100, offset=0) {
   return new Promise((resolve, reject) => {
-    db.all('SELECT * from tb_msg WHERE `room` = ? ORDER BY `time` DESC LIMIT ?', roomId, limit, (err, row) => {
+    db.all('SELECT * from tb_msg WHERE `room` = ? ORDER BY `time` DESC LIMIT ? OFFSET ?', roomId, limit, offset, (err, row) => {
       if (err) reject(err)
 
       resolve(row)

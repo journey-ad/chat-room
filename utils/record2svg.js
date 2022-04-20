@@ -116,7 +116,7 @@ function record2svg({ roomId, record, width, height, limit, theme, title, fontSi
           color: #6f6f6f;
         }
         .msg {
-          font-family: serif;
+          font-family: "Helvetica Neue", "PingFang SC", serif;
           word-break: break-all;
         }
       </style>
