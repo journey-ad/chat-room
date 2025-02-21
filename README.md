@@ -62,7 +62,7 @@ https://chat.getloli.com/room/@:name?title=the title whatever
 
 Just use your own name and title, eg:
 
-[https://chat.getloli.com/room/@test?title=a simple title](https://chat.getloli.com/room/@test?title=a%20simple%20title)
+[https://chat.getloli.com/room/@test?title=a simple title](https://gzcmcn.github.io/chat-room/room/@test?title=a%20simple%20title)
 
 And you can open in new tab or use iframe, [example](https://count.getloli.com/)
 
